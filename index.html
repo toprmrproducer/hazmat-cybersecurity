@@ -464,40 +464,51 @@
     .glass {
       position: relative;
       isolation: isolate;
-      background: rgba(255,255,255,0.035);
+      background:
+        radial-gradient(circle at top left, rgba(255,255,255,0.055) 0%, transparent 55%),
+        linear-gradient(145deg, rgba(255,255,255,0.045) 0%, rgba(255,255,255,0.015) 100%);
       border: 1px solid rgba(255,255,255,0.09);
-      backdrop-filter: blur(16px) saturate(170%);
-      -webkit-backdrop-filter: blur(16px) saturate(170%);
-      border-radius: 6px;
-      box-shadow:
-        /* edge layer */
-        inset 1px 1px 1px 0 rgba(255,255,255,0.10),
-        inset -1px -1px 1px 0 rgba(255,255,255,0.04),
-        /* face layer */
-        0 4px 6px rgba(0,0,0,0.3),
-        0 0 24px rgba(255,255,255,0.03);
-      transition: background 0.35s ease, border-color 0.35s ease, transform 0.35s ease, box-shadow 0.35s ease;
-    }
-    .glass::before {
-      /* subtle top highlight — like light hitting the top edge of real glass */
-      content: '';
-      position: absolute;
-      top: 0; left: 12%; right: 12%; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
-      pointer-events: none;
-      z-index: 1;
-      opacity: 0.8;
-    }
-    .glass:hover {
-      background: rgba(255,204,0,0.05);
-      border-color: rgba(255,204,0,0.28);
-      transform: translateY(-3px);
+      backdrop-filter: blur(22px) saturate(185%);
+      -webkit-backdrop-filter: blur(22px) saturate(185%);
+      border-radius: 10px;
       box-shadow:
         inset 1px 1px 1px 0 rgba(255,255,255,0.14),
-        inset -1px -1px 1px 0 rgba(255,255,255,0.06),
-        0 20px 40px rgba(0,0,0,0.5),
-        0 0 32px rgba(255,204,0,0.12);
+        inset -1px -1px 1px 0 rgba(255,255,255,0.04),
+        inset 0 0 24px rgba(255,255,255,0.015),
+        0 4px 10px rgba(0,0,0,0.35),
+        0 0 30px rgba(255,255,255,0.03);
+      transition: background 0.4s ease, border-color 0.4s ease, transform 0.4s cubic-bezier(.3,1.2,.4,1), box-shadow 0.4s ease;
     }
+    .glass::before {
+      /* top refraction highlight */
+      content: '';
+      position: absolute;
+      top: 0; left: 14%; right: 14%; height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+      pointer-events: none; z-index: 1; opacity: 0.9;
+    }
+    .glass::after {
+      /* diagonal sheen — ultra subtle, like real light hitting a polished pane */
+      content: '';
+      position: absolute; inset: 0;
+      background: linear-gradient(125deg, transparent 40%, rgba(255,255,255,0.035) 50%, transparent 60%);
+      border-radius: inherit; pointer-events: none; z-index: 1;
+      opacity: 0; transition: opacity 0.5s ease;
+    }
+    .glass:hover {
+      background:
+        radial-gradient(circle at top left, rgba(255,204,0,0.06) 0%, transparent 55%),
+        linear-gradient(145deg, rgba(255,204,0,0.035) 0%, rgba(255,255,255,0.02) 100%);
+      border-color: rgba(255,204,0,0.35);
+      transform: translateY(-4px);
+      box-shadow:
+        inset 1px 1px 1px 0 rgba(255,255,255,0.18),
+        inset -1px -1px 1px 0 rgba(255,255,255,0.06),
+        inset 0 0 30px rgba(255,204,0,0.04),
+        0 24px 50px rgba(0,0,0,0.55),
+        0 0 42px rgba(255,204,0,0.18);
+    }
+    .glass:hover::after { opacity: 1; }
     .glass > * { position: relative; z-index: 2; }
 
     /* ============================================================
@@ -519,16 +530,78 @@
       grid-template-columns: repeat(4, 1fr);
       gap: 16px;
     }
-    .stat-card { padding: 32px 28px; }
+    .stat-card {
+      padding: 32px 28px 36px;
+      overflow: hidden;
+      cursor: default;
+    }
+    .stat-card-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .stat-pulse {
+      display: flex; align-items: center; gap: 7px;
+      font-family: var(--font-mono); font-size: 9px;
+      letter-spacing: 3px; color: rgba(255,204,0,0.75);
+      text-transform: uppercase;
+    }
+    .stat-pulse-dot {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: #ffcc00;
+      box-shadow: 0 0 0 0 rgba(255,204,0,0.8);
+      animation: stat-pulse 2s ease-in-out infinite;
+    }
+    @keyframes stat-pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(255,204,0,0.6); }
+      50% { box-shadow: 0 0 0 8px rgba(255,204,0,0); }
+    }
+    .stat-icon {
+      width: 16px; height: 16px; stroke: rgba(255,204,0,0.55);
+      stroke-width: 1.6; fill: none;
+      stroke-linecap: round; stroke-linejoin: round;
+      transition: stroke 0.3s ease, transform 0.3s ease;
+    }
+    .stat-card:hover .stat-icon { stroke: #ffcc00; transform: rotate(12deg) scale(1.1); }
     .stat-number {
       font-family: var(--font-display);
-      font-size: 48px; font-weight: 300;
+      font-size: 58px; font-weight: 300;
       line-height: 1; color: #fff;
-      letter-spacing: -1px;
+      letter-spacing: -2px;
+      text-shadow: 0 0 24px rgba(255,204,0,0.1);
+      background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.75) 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
-    .stat-label { margin-top: 18px; font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.9); }
-    .stat-desc { margin-top: 6px; font-family: var(--font-mono); font-size: 11px; color: rgba(255,255,255,0.4); }
-    .stat-accent { margin-top: 24px; width: 32px; height: 1px; background: #ffcc00; }
+    .stat-label { margin-top: 18px; font-size: 13.5px; font-weight: 500; color: rgba(255,255,255,0.92); letter-spacing: 0.3px; }
+    .stat-desc { margin-top: 6px; font-family: var(--font-mono); font-size: 11px; color: rgba(255,255,255,0.42); }
+    .stat-progress {
+      margin-top: 28px; position: relative;
+      height: 2px; border-radius: 2px;
+      background: rgba(255,255,255,0.07);
+      overflow: hidden;
+    }
+    .stat-progress::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: var(--progress, 85%);
+      background: linear-gradient(90deg, #ffcc00, #ff9500);
+      border-radius: 2px;
+      box-shadow: 0 0 12px rgba(255,204,0,0.6);
+      animation: progress-grow 1.8s cubic-bezier(.2,.8,.2,1) both;
+    }
+    .stat-progress::after {
+      content: ''; position: absolute; top: 0; bottom: 0;
+      left: var(--progress, 85%); width: 40px;
+      background: linear-gradient(90deg, rgba(255,204,0,0.5), transparent);
+      transform: translateX(-100%);
+      animation: progress-shine 2.8s ease-in-out infinite 2s;
+    }
+    @keyframes progress-grow { from { width: 0; } }
+    @keyframes progress-shine {
+      0% { opacity: 0; transform: translateX(-100%); }
+      50% { opacity: 1; }
+      100% { opacity: 0; transform: translateX(40px); }
+    }
+    .stat-card:hover .stat-number { text-shadow: 0 0 40px rgba(255,204,0,0.35); }
     @media (max-width: 900px) { .stats-grid { grid-template-columns: repeat(2, 1fr); } }
 
     /* ============================================================
@@ -951,10 +1024,6 @@
           <div class="tab gallery"><span class="tab-label">Gallery</span><span class="tab-num">02</span></div>
           <div class="tab collections"><span class="tab-label">Collections</span><span class="tab-num">03</span></div>
         </div>
-        <div class="arrows-group">
-          <button class="arrow-btn">&#8592;</button>
-          <button class="arrow-btn">&#8594;</button>
-        </div>
       </div>
     </div>
   </section>
@@ -966,29 +1035,45 @@
       <p class="section-eyebrow">Live Intelligence</p>
       <h2 class="section-heading">Numbers that define our containment protocol.</h2>
       <div class="stats-grid">
-        <div class="glass stat-card">
+        <div class="glass stat-card feat-framed">
+          <div class="stat-card-head">
+            <div class="stat-pulse"><span class="stat-pulse-dot"></span>LIVE</div>
+            <svg class="stat-icon" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+          </div>
           <div class="stat-number" data-count="99.7" data-suffix="%">0%</div>
           <div class="stat-label">Threat Detection Rate</div>
           <div class="stat-desc">Across all vector classes</div>
-          <div class="stat-accent"></div>
+          <div class="stat-progress" style="--progress: 99.7%;"></div>
         </div>
-        <div class="glass stat-card">
+        <div class="glass stat-card feat-framed">
+          <div class="stat-card-head">
+            <div class="stat-pulse"><span class="stat-pulse-dot"></span>LIVE</div>
+            <svg class="stat-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>
+          </div>
           <div class="stat-number" data-count="0.3" data-suffix="ms">0ms</div>
           <div class="stat-label">Response Time</div>
           <div class="stat-desc">Average neutralization speed</div>
-          <div class="stat-accent"></div>
+          <div class="stat-progress" style="--progress: 96%;"></div>
         </div>
-        <div class="glass stat-card">
+        <div class="glass stat-card feat-framed">
+          <div class="stat-card-head">
+            <div class="stat-pulse"><span class="stat-pulse-dot"></span>LIVE</div>
+            <svg class="stat-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
           <div class="stat-number" data-count="4.2" data-suffix="M+">0M+</div>
           <div class="stat-label">Threats Contained</div>
           <div class="stat-desc">In the last 30 days</div>
-          <div class="stat-accent"></div>
+          <div class="stat-progress" style="--progress: 84%;"></div>
         </div>
-        <div class="glass stat-card">
+        <div class="glass stat-card feat-framed">
+          <div class="stat-card-head">
+            <div class="stat-pulse"><span class="stat-pulse-dot"></span>LIVE</div>
+            <svg class="stat-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15 15 0 0 1 0 20M12 2a15 15 0 0 0 0 20"/></svg>
+          </div>
           <div class="stat-number" data-count="247" data-suffix="" data-int="1">0</div>
           <div class="stat-label">Nations Protected</div>
           <div class="stat-desc">Global deployment coverage</div>
-          <div class="stat-accent"></div>
+          <div class="stat-progress" style="--progress: 62%;"></div>
         </div>
       </div>
     </div>
@@ -1603,27 +1688,26 @@
         headBone.rotation.order = 'YXZ';
         neckBone.rotation.order = 'YXZ';
 
-        // Zone: only track when cursor is over the character (not over text on left or cards on right)
-        const inZone = mouseX > -0.25 && mouseX < 0.52;
+        // Zone: track when cursor is over the character area
+        const inZone = mouseX > -0.30 && mouseX < 0.58;
         const msSince = performance.now() - mouseLastMove;
-        const recentMove = msSince < 2200;
-        // Smoothly fade tracking in/out as cursor enters/leaves zone
-        trackingStrength = THREE.MathUtils.lerp(trackingStrength, (inZone && recentMove) ? 1.0 : 0.0, 0.04);
+        const recentMove = msSince < 2500;
+        // Fast fade in/out
+        trackingStrength = THREE.MathUtils.lerp(trackingStrength, (inZone && recentMove) ? 1.0 : 0.0, 0.10);
 
-        // Default pose: chin down looking toward camera (tX = 0.18)
-        // When tracking: add mouse offset on top of default
-        const tY = mouseX * 0.30 * trackingStrength;
-        const tX = 0.34 + mouseY * -0.25 * trackingStrength; // 0.34 = chin-down default
+        // More fluid tracking: larger range, snappier response
+        const tY = mouseX * 0.50 * trackingStrength;
+        const tX = 0.34 + mouseY * -0.35 * trackingStrength;
 
-        const blendedTY = THREE.MathUtils.clamp(tY * 0.82 + idleY * 0.18, -0.30, 0.30);
-        const blendedTX = THREE.MathUtils.clamp(tX * 0.82 + idleX * 0.18, -0.10, 0.55);
+        const blendedTY = THREE.MathUtils.clamp(tY * 0.85 + idleY * 0.15, -0.50, 0.50);
+        const blendedTX = THREE.MathUtils.clamp(tX * 0.85 + idleX * 0.15, -0.12, 0.60);
 
-        headBone.rotation.y = THREE.MathUtils.lerp(headBone.rotation.y, blendedTY, 0.05);
-        headBone.rotation.x = THREE.MathUtils.lerp(headBone.rotation.x, blendedTX, 0.05);
-        headBone.rotation.z = THREE.MathUtils.lerp(headBone.rotation.z, 0, 0.05);
-        neckBone.rotation.y = THREE.MathUtils.lerp(neckBone.rotation.y, blendedTY * 0.35, 0.05);
-        neckBone.rotation.x = THREE.MathUtils.lerp(neckBone.rotation.x, blendedTX * 0.35, 0.05);
-        neckBone.rotation.z = THREE.MathUtils.lerp(neckBone.rotation.z, 0, 0.05);
+        headBone.rotation.y = THREE.MathUtils.lerp(headBone.rotation.y, blendedTY, 0.11);
+        headBone.rotation.x = THREE.MathUtils.lerp(headBone.rotation.x, blendedTX, 0.11);
+        headBone.rotation.z = THREE.MathUtils.lerp(headBone.rotation.z, 0, 0.11);
+        neckBone.rotation.y = THREE.MathUtils.lerp(neckBone.rotation.y, blendedTY * 0.40, 0.11);
+        neckBone.rotation.x = THREE.MathUtils.lerp(neckBone.rotation.x, blendedTX * 0.40, 0.11);
+        neckBone.rotation.z = THREE.MathUtils.lerp(neckBone.rotation.z, 0, 0.11);
       }
 
 
