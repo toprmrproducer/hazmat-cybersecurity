@@ -1672,7 +1672,9 @@
 
       if (model) {
         model.position.y = modelRestY + Math.sin(t * 0.6) * 0.006;
-        model.rotation.y = CHAR_ROT + Math.sin(t * 0.4) * 0.025;
+        // Subtle body yaw follows mouse — makes whole model feel alive
+        const bodyTarget = CHAR_ROT + mouseX * 0.04 * trackingStrength + Math.sin(t * 0.4) * 0.020;
+        model.rotation.y = THREE.MathUtils.lerp(model.rotation.y, bodyTarget, 0.025);
       }
 
       idleChangeTimer -= 0.016;
@@ -1688,26 +1690,27 @@
         headBone.rotation.order = 'YXZ';
         neckBone.rotation.order = 'YXZ';
 
-        // Zone: track when cursor is over the character area
-        const inZone = mouseX > -0.30 && mouseX < 0.58;
+        // Wide zone — only stop tracking over the far left (text) or beyond right edge
+        const inZone = mouseX > -0.55 && mouseX < 0.78;
         const msSince = performance.now() - mouseLastMove;
-        const recentMove = msSince < 2500;
-        // Fast fade in/out
-        trackingStrength = THREE.MathUtils.lerp(trackingStrength, (inZone && recentMove) ? 1.0 : 0.0, 0.10);
+        const recentMove = msSince < 3000;
+        trackingStrength = THREE.MathUtils.lerp(trackingStrength, (inZone && recentMove) ? 1.0 : 0.0, 0.08);
 
-        // More fluid tracking: larger range, snappier response
-        const tY = mouseX * 0.50 * trackingStrength;
-        const tX = 0.34 + mouseY * -0.35 * trackingStrength;
+        const tY = mouseX * 0.62 * trackingStrength;        // wider yaw
+        const tX = 0.34 + mouseY * -0.45 * trackingStrength; // wider pitch
+        // Lateral z-tilt: head cocks slightly in the direction it looks — key to organic feel
+        const tZ = mouseX * -0.12 * trackingStrength;
 
-        const blendedTY = THREE.MathUtils.clamp(tY * 0.85 + idleY * 0.15, -0.50, 0.50);
-        const blendedTX = THREE.MathUtils.clamp(tX * 0.85 + idleX * 0.15, -0.12, 0.60);
+        const blendedTY = THREE.MathUtils.clamp(tY * 0.85 + idleY * 0.15, -0.62, 0.62);
+        const blendedTX = THREE.MathUtils.clamp(tX * 0.85 + idleX * 0.15, -0.14, 0.68);
+        const blendedTZ = THREE.MathUtils.clamp(tZ * 0.85, -0.12, 0.12);
 
-        headBone.rotation.y = THREE.MathUtils.lerp(headBone.rotation.y, blendedTY, 0.11);
-        headBone.rotation.x = THREE.MathUtils.lerp(headBone.rotation.x, blendedTX, 0.11);
-        headBone.rotation.z = THREE.MathUtils.lerp(headBone.rotation.z, 0, 0.11);
-        neckBone.rotation.y = THREE.MathUtils.lerp(neckBone.rotation.y, blendedTY * 0.40, 0.11);
-        neckBone.rotation.x = THREE.MathUtils.lerp(neckBone.rotation.x, blendedTX * 0.40, 0.11);
-        neckBone.rotation.z = THREE.MathUtils.lerp(neckBone.rotation.z, 0, 0.11);
+        headBone.rotation.y = THREE.MathUtils.lerp(headBone.rotation.y, blendedTY, 0.13);
+        headBone.rotation.x = THREE.MathUtils.lerp(headBone.rotation.x, blendedTX, 0.13);
+        headBone.rotation.z = THREE.MathUtils.lerp(headBone.rotation.z, blendedTZ, 0.10);
+        neckBone.rotation.y = THREE.MathUtils.lerp(neckBone.rotation.y, blendedTY * 0.42, 0.13);
+        neckBone.rotation.x = THREE.MathUtils.lerp(neckBone.rotation.x, blendedTX * 0.42, 0.13);
+        neckBone.rotation.z = THREE.MathUtils.lerp(neckBone.rotation.z, blendedTZ * 0.50, 0.10);
       }
 
 
