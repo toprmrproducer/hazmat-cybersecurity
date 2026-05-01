@@ -1686,7 +1686,7 @@
       sfill.position.set(0.2, 3, 3.5); sfill.target.position.set(0, 1.6, 0);
       sentScene.add(sfill, sfill.target);
 
-      let sentModel = null, sentHead = null, sentNeck = null, sentRestY = 0;
+      let sentModel = null, sentHead = null, sentNeck = null, sentRestY = 0, sentMidY = 1.2;
       const SENT_ROT = 0.3;
       const sentClock = new THREE.Clock();
       let sentVisible = false;
@@ -1701,20 +1701,38 @@
           sentScene.add(sentModel);
           sentModel.rotation.y = 0;
 
+          // CRITICAL: must compute geometry bounding boxes on SkinnedMesh
+          // before setFromObject or it returns zero-size bounds
+          sentModel.traverse(obj => {
+            if (obj.isSkinnedMesh && obj.geometry) {
+              obj.geometry.computeBoundingBox();
+              obj.geometry.computeBoundingSphere();
+            } else if (obj.isMesh && obj.geometry) {
+              obj.geometry.computeBoundingBox();
+            }
+          });
+          sentModel.updateMatrixWorld(true);
+
           const rb = new THREE.Box3().setFromObject(sentModel);
           const rs = rb.getSize(new THREE.Vector3());
-          const sc = THREE.MathUtils.clamp(2.4 / Math.max(rs.y, 0.001), 0.001, 5);
+          const SENT_TARGET_H = 2.4;
+          const sc = THREE.MathUtils.clamp(SENT_TARGET_H / Math.max(rs.y, 0.001), 0.001, 5);
           sentModel.scale.setScalar(sc);
           sentModel.updateMatrixWorld(true);
 
-          // Centre the model at world origin so camera at (0,0,5.5) sees it perfectly
+          // Recompute with correct bounds: feet at y=0, center X/Z
           const sb3 = new THREE.Box3().setFromObject(sentModel);
           const sbC = sb3.getCenter(new THREE.Vector3());
           sentModel.position.x -= sbC.x;
-          sentModel.position.y -= sbC.y; // centred vertically
+          sentModel.position.y -= sb3.min.y; // feet exactly at y=0
           sentModel.position.z -= sbC.z;
           sentModel.rotation.y = SENT_ROT;
           sentRestY = sentModel.position.y;
+
+          // Camera looks at model mid-body
+          sentMidY = SENT_TARGET_H / 2; // 1.2
+          sentCamera.position.set(0, sentMidY, 5.5);
+          sentCamera.lookAt(0, sentMidY, 0);
 
           sentModel.traverse((obj) => {
             if (obj.isMesh) {
@@ -1743,12 +1761,14 @@
         sentModel.rotation.y = SENT_ROT + Math.sin(t * 0.38) * 0.025;
         if (sentHead && sentNeck) {
           sentHead.rotation.order = 'YXZ'; sentNeck.rotation.order = 'YXZ';
-          sentHead.rotation.y = THREE.MathUtils.lerp(sentHead.rotation.y, Math.sin(t * 0.43) * 0.24, 0.03);
-          sentHead.rotation.x = THREE.MathUtils.lerp(sentHead.rotation.x, Math.sin(t * 0.27) * -0.1, 0.03);
+          // Gentle idle: look slightly down toward viewer, subtle yaw drift
+          sentHead.rotation.y = THREE.MathUtils.lerp(sentHead.rotation.y, Math.sin(t * 0.43) * 0.18, 0.03);
+          sentHead.rotation.x = THREE.MathUtils.lerp(sentHead.rotation.x, 0.22 + Math.sin(t * 0.27) * 0.05, 0.03);
           sentHead.rotation.z = THREE.MathUtils.lerp(sentHead.rotation.z, 0, 0.03);
-          sentNeck.rotation.y = THREE.MathUtils.lerp(sentNeck.rotation.y, Math.sin(t * 0.43) * 0.09, 0.03);
-          sentNeck.rotation.x = THREE.MathUtils.lerp(sentNeck.rotation.x, Math.sin(t * 0.27) * -0.04, 0.03);
+          sentNeck.rotation.y = THREE.MathUtils.lerp(sentNeck.rotation.y, Math.sin(t * 0.43) * 0.07, 0.03);
+          sentNeck.rotation.x = THREE.MathUtils.lerp(sentNeck.rotation.x, 0.09 + Math.sin(t * 0.27) * 0.02, 0.03);
           sentNeck.rotation.z = THREE.MathUtils.lerp(sentNeck.rotation.z, 0, 0.03);
+          sentCamera.lookAt(0, sentModel.position.y + sentMidY, 0);
         }
         sentRenderer.render(sentScene, sentCamera);
       }
