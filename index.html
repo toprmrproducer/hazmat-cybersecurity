@@ -1561,8 +1561,8 @@
         console.log('neckBone found:', neckBone?.name);
 
         // Reset from GLB frame-0: set chin-down default so character looks toward camera
-        if (headBone) headBone.rotation.set(0.20, 0, 0, 'YXZ'); // chin down, eyes toward viewer
-        if (neckBone) neckBone.rotation.set(0.09, 0, 0, 'YXZ');
+        if (headBone) headBone.rotation.set(0.38, 0, 0, 'YXZ'); // chin down, eyes toward viewer
+        if (neckBone) neckBone.rotation.set(0.16, 0, 0, 'YXZ');
 
         scene.environment = envTexture;
         scene.environmentIntensity = 1.8;
@@ -1613,10 +1613,10 @@
         // Default pose: chin down looking toward camera (tX = 0.18)
         // When tracking: add mouse offset on top of default
         const tY = mouseX * 0.30 * trackingStrength;
-        const tX = 0.18 + mouseY * -0.25 * trackingStrength; // 0.18 = chin-down default
+        const tX = 0.34 + mouseY * -0.25 * trackingStrength; // 0.34 = chin-down default
 
         const blendedTY = THREE.MathUtils.clamp(tY * 0.82 + idleY * 0.18, -0.30, 0.30);
-        const blendedTX = THREE.MathUtils.clamp(tX * 0.82 + idleX * 0.18, -0.15, 0.40);
+        const blendedTX = THREE.MathUtils.clamp(tX * 0.82 + idleX * 0.18, -0.10, 0.55);
 
         headBone.rotation.y = THREE.MathUtils.lerp(headBone.rotation.y, blendedTY, 0.05);
         headBone.rotation.x = THREE.MathUtils.lerp(headBone.rotation.x, blendedTX, 0.05);
