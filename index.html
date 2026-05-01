@@ -7,7 +7,9 @@
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
   <title>HazMat Cybersecurity &mdash; Neutralizing Cyber Threats Before They Spread</title>
-  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@100;200;300;400;700&family=Space+Grotesk:wght@300;400;500;600&family=DM+Mono:ital,wght@0,300;0,400;0,500&display=swap" rel="stylesheet">
+  <!-- Premium fonts: Clash Display (geometric), Inter (UI), JetBrains Mono (technical) -->
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@200,300,400,500,600,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <script type="importmap">
   {
     "imports": {
@@ -18,9 +20,9 @@
   </script>
   <style>
     :root {
-      --font-display: 'Syne', sans-serif;
-      --font-ui: 'Space Grotesk', sans-serif;
-      --font-mono: 'DM Mono', monospace;
+      --font-display: 'Clash Display', sans-serif;
+      --font-ui: 'Inter', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
     }
 
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
@@ -29,6 +31,9 @@
       width: 100%; min-height: 100%;
       overflow-x: hidden; overflow-y: auto;
       background: #000000; font-family: var(--font-ui);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
     }
     html { scroll-behavior: smooth; }
     ::selection { background: rgba(255,204,0,0.3); color: #fff; }
@@ -142,28 +147,34 @@
     }
     .hero-heading {
       font-family: var(--font-display);
-      font-size: clamp(40px, 5vw, 76px);
-      font-weight: 500;
-      line-height: 1.02;
-      letter-spacing: -1px;
+      font-size: clamp(52px, 6.5vw, 96px);
+      font-weight: 600;
+      line-height: 1.00;
+      letter-spacing: -3px;
       color: #ffffff;
       margin-bottom: 28px;
       text-transform: none;
-      text-shadow: 0 2px 24px rgba(0,0,0,0.6);
+    }
+    .hero-heading em {
+      font-style: normal;
+      background: linear-gradient(90deg, #ffcc00 0%, #ffe566 45%, #ffcc00 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 32px rgba(255,204,0,0.4));
     }
     .hero-sub {
       font-family: var(--font-ui);
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 400;
-      line-height: 1.7;
-      color: rgba(255,255,255,0.82);
-      letter-spacing: 0.3px;
-      margin-bottom: 36px;
-      text-shadow: 0 1px 12px rgba(0,0,0,0.8);
+      line-height: 1.75;
+      color: rgba(255,255,255,0.62);
+      letter-spacing: 0.1px;
+      margin-bottom: 40px;
+      max-width: 480px;
     }
     .hero-cta {
-      font-family: var(--font-ui); font-size: 11px; font-weight: 600;
-      letter-spacing: 4px; text-transform: uppercase;
+      font-family: var(--font-ui); font-size: 11px; font-weight: 500;
+      letter-spacing: 3.5px; text-transform: uppercase;
       color: #000; background: #ffcc00; border: 1px solid rgba(255,204,0,0.8);
       padding: 15px 34px; cursor: pointer; position: relative; overflow: hidden;
       box-shadow: 0 0 22px rgba(255,204,0,0.35), inset 0 1px 1px rgba(255,255,255,0.5);
@@ -182,8 +193,8 @@
       display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 0;
     }
     .hero-cta-ghost {
-      font-family: var(--font-ui); font-size: 11px; font-weight: 500;
-      letter-spacing: 4px; text-transform: uppercase;
+      font-family: var(--font-ui); font-size: 11px; font-weight: 400;
+      letter-spacing: 3.5px; text-transform: uppercase;
       color: rgba(255,255,255,0.75); position: relative; overflow: hidden;
       background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.22);
       padding: 15px 28px; cursor: pointer;
@@ -230,7 +241,8 @@
       color: rgba(255,255,255,0.38); text-transform: uppercase; margin-bottom: 9px;
     }
     .hcard-val {
-      font-family: var(--font-display); font-size: 29px; font-weight: 500;
+      font-family: var(--font-display); font-size: 32px; font-weight: 500;
+      letter-spacing: -1px;
       color: #fff; line-height: 1;
     }
     .hcard-note {
@@ -378,8 +390,8 @@
       flex-shrink: 0;
     }
     .nav-logo-text {
-      font-family: var(--font-mono); font-size: 17px;
-      font-weight: 600; letter-spacing: 8px;
+      font-family: var(--font-display); font-size: 16px;
+      font-weight: 600; letter-spacing: 7px;
       color: #fff; text-transform: uppercase;
     }
     .nav-links { display: flex; gap: 32px; list-style: none; }
@@ -445,13 +457,13 @@
     }
     .section-heading {
       font-family: var(--font-display);
-      font-size: clamp(36px, 4.2vw, 56px);
-      font-weight: 400;
-      line-height: 1.05;
-      letter-spacing: -1px;
+      font-size: clamp(42px, 4.8vw, 68px);
+      font-weight: 500;
+      line-height: 1.04;
+      letter-spacing: -2px;
       color: #fff;
       margin-bottom: 60px;
-      max-width: 680px;
+      max-width: 720px;
     }
     .reveal { opacity: 0; transform: translateY(30px); transition: opacity 0.9s ease, transform 0.9s ease; }
     .reveal.visible { opacity: 1; transform: translateY(0); }
@@ -564,11 +576,11 @@
     .stat-card:hover .stat-icon { stroke: #ffcc00; transform: rotate(12deg) scale(1.1); }
     .stat-number {
       font-family: var(--font-display);
-      font-size: 58px; font-weight: 300;
+      font-size: 64px; font-weight: 300;
       line-height: 1; color: #fff;
-      letter-spacing: -2px;
-      text-shadow: 0 0 24px rgba(255,204,0,0.1);
-      background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.75) 100%);
+      letter-spacing: -3px;
+      font-variant-numeric: tabular-nums;
+      background: linear-gradient(170deg, #ffffff 20%, rgba(255,255,255,0.65) 100%);
       -webkit-background-clip: text; background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -634,8 +646,8 @@
     }
     .hiw-step-icon svg { width: 16px; height: 16px; color: #ffcc00; stroke: #ffcc00; fill: none; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
     .hiw-step-tag { font-family: var(--font-mono); font-size: 11px; letter-spacing: 4px; color: rgba(255,255,255,0.3); text-transform: uppercase; margin-bottom: 8px; }
-    .hiw-step h3 { font-family: var(--font-display); font-size: 22px; font-weight: 400; color: #fff; margin-bottom: 12px; }
-    .hiw-step p { font-size: 14px; line-height: 1.7; color: rgba(255,255,255,0.5); }
+    .hiw-step h3 { font-family: var(--font-display); font-size: 26px; font-weight: 500; letter-spacing: -0.5px; color: #fff; margin-bottom: 12px; }
+    .hiw-step p { font-family: var(--font-ui); font-size: 15px; line-height: 1.75; color: rgba(255,255,255,0.48); }
     @media (max-width: 900px) {
       .hiw-grid { grid-template-columns: 1fr; gap: 40px; }
       .hiw-intro { position: static; }
@@ -891,18 +903,19 @@
     }
     .final-cta-heading {
       font-family: var(--font-display);
-      font-size: clamp(48px, 6vw, 84px);
-      font-weight: 400;
-      line-height: 1.02;
-      letter-spacing: -1.5px;
+      font-size: clamp(48px, 6vw, 88px);
+      font-weight: 600;
+      line-height: 1.00;
+      letter-spacing: -3px;
       color: #fff;
       margin-bottom: 32px;
     }
     .final-cta-heading em { font-style: normal; color: #ffcc00; }
     .final-cta-sub {
-      font-size: 15px; line-height: 1.7;
-      color: rgba(255,255,255,0.55);
-      max-width: 560px; margin: 0 auto 48px;
+      font-family: var(--font-ui);
+      font-size: 16px; font-weight: 400; line-height: 1.75;
+      color: rgba(255,255,255,0.48);
+      max-width: 520px; margin: 0 auto 48px;
     }
     .final-cta-actions {
       display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
@@ -976,7 +989,7 @@
     <div id="ui-overlay">
       <div id="hero-content">
         <p class="hero-eyebrow">Est. 2025 &mdash; Cyber Division</p>
-        <h1 class="hero-heading">Stop the Breach<br>Before It<br><em style="font-style:italic;color:#ffcc00;">Even Starts.</em></h1>
+        <h1 class="hero-heading">Stop the Breach<br>Before It<br><em>Even Starts.</em></h1>
         <p class="hero-sub">AI-powered containment that operates at machine speed.<br>Real-time threat neutralisation. Zero tolerance for breach.</p>
         <div class="hero-cta-row">
           <button class="hero-cta">Deploy Now</button>
