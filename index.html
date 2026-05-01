@@ -1354,14 +1354,15 @@
     const BASE_MODEL_Y = -0.8;
 
     let model = null;
-    let headBone = null;
-    let neckBone = null;
-    let mouseX = 0;
-    let mouseY = 0;
-    let idleTargetY = 0;
-    let idleTargetX = 0;
-    let idleChangeTimer = 0;
+    let headBone = null, neckBone = null;
+    let rightArmBone = null, rightForeArmBone = null, rightHandBone = null;
+    let mouseX = 0, mouseY = 0;
+    let mouseLastMove = 0;
+    let idleTargetY = 0, idleTargetX = 0, idleChangeTimer = 0;
     let modelRestY = 0;
+    // Wave state machine
+    let waveState = 'idle'; // 'idle' | 'raising' | 'waving' | 'lowering'
+    let waveStartT = 0, waveNextT = 9 + Math.random() * 3;
     const CHAR_X = 0.8;   // centered in viewport
     const CHAR_ROT = -0.65; // ~-37 degrees: shows face, still angled toward text
     const clock = new THREE.Clock();
@@ -1489,7 +1490,8 @@
 
     window.addEventListener('mousemove', (e) => {
       mouseX = (e.clientX / window.innerWidth) * 2 - 1;
-      mouseY = -((e.clientY / window.innerHeight) * 2 - 1); // standard: +1 = top, -1 = bottom
+      mouseY = -((e.clientY / window.innerHeight) * 2 - 1); // +1=top -1=bottom
+      mouseLastMove = performance.now();
     });
 
     const loader = new GLTFLoader();
@@ -1550,13 +1552,28 @@
 
         model.traverse((obj) => {
           if (obj.isBone || obj.type === 'Bone') {
+            const n = obj.name.toLowerCase();
             console.log('BONE:', obj.name);
             if (obj.name === 'Head') headBone = obj;
             if (obj.name === 'neck') neckBone = obj;
-            if (!headBone && obj.name.toLowerCase().includes('head')) headBone = obj;
-            if (!neckBone && obj.name.toLowerCase().includes('neck')) neckBone = obj;
+            if (!headBone && n.includes('head')) headBone = obj;
+            if (!neckBone && n.includes('neck')) neckBone = obj;
+            // Right arm detection — multiple naming conventions
+            if (!rightArmBone && !n.includes('forearm') && !n.includes('shoulder') &&
+                (n === 'rightarm' || n.includes('right_arm') || n.includes('upperarm_r') ||
+                 (n.includes('right') && n.includes('arm')) || n === 'r_upperarm' || n === 'r_arm'))
+              rightArmBone = obj;
+            if (!rightForeArmBone &&
+                (n.includes('rightforearm') || n.includes('right_forearm') || n.includes('forearm_r') ||
+                 n === 'r_forearm' || (n.includes('right') && n.includes('forearm'))))
+              rightForeArmBone = obj;
+            if (!rightHandBone &&
+                (n.includes('righthand') || n.includes('right_hand') || n.includes('hand_r') ||
+                 n === 'r_hand' || (n.includes('right') && n.includes('hand'))))
+              rightHandBone = obj;
           }
         });
+        console.log('[WAVE] arm:', rightArmBone?.name, 'forearm:', rightForeArmBone?.name, 'hand:', rightHandBone?.name);
 
         console.log('headBone found:', headBone?.name);
         console.log('neckBone found:', neckBone?.name);
@@ -1599,19 +1616,40 @@
       if (headBone && neckBone) {
         headBone.rotation.order = 'YXZ';
         neckBone.rotation.order = 'YXZ';
-        // FIXED: head tracking was inverted on X. Sign flipped so head follows the cursor naturally.
-        const tY = THREE.MathUtils.clamp(mouseX * -0.55, -0.55, 0.55);
-        // CONFIRMED: rotation.x NEGATIVE = look UP in this rig. So cursor-down (mouseY=-1) needs positive tX.
-        const tX = THREE.MathUtils.clamp(mouseY * -0.55, -0.55, 0.55);
-        const blendedTY = tY * 0.85 + idleY * 0.15;
-        const blendedTX = tX * 0.85 + idleX * 0.15;
-        headBone.rotation.y = THREE.MathUtils.lerp(headBone.rotation.y, blendedTY, 0.05);
-        headBone.rotation.x = THREE.MathUtils.lerp(headBone.rotation.x, blendedTX, 0.05);
-        headBone.rotation.z = THREE.MathUtils.lerp(headBone.rotation.z, 0, 0.05);
-        neckBone.rotation.y = THREE.MathUtils.lerp(neckBone.rotation.y, tY * 0.4, 0.05);
-        neckBone.rotation.x = THREE.MathUtils.lerp(neckBone.rotation.x, tX * 0.4, 0.05);
-        neckBone.rotation.z = THREE.MathUtils.lerp(neckBone.rotation.z, 0, 0.05);
+        const tY = THREE.MathUtils.clamp(mouseX * -0.6, -0.6, 0.6);
+        // rotation.x NEGATIVE = look UP → cursor-down (mouseY=-1) * -0.65 = +0.65 = look DOWN ✓
+        const tX = THREE.MathUtils.clamp(mouseY * -0.65, -0.65, 0.65);
+        // Default return: after 2.5s idle, smoothly fade head back to forward
+        const msSince = performance.now() - mouseLastMove;
+        const returnFade = msSince > 2500 ? Math.min(1, (msSince - 2500) / 1500) : 0;
+        const finalTY = tY * (1 - returnFade);
+        const finalTX = tX * (1 - returnFade);
+        const blendedTY = finalTY * 0.85 + idleY * 0.15;
+        const blendedTX = finalTX * 0.85 + idleX * 0.15;
+        headBone.rotation.y = THREE.MathUtils.lerp(headBone.rotation.y, blendedTY, 0.09);
+        headBone.rotation.x = THREE.MathUtils.lerp(headBone.rotation.x, blendedTX, 0.09);
+        headBone.rotation.z = THREE.MathUtils.lerp(headBone.rotation.z, 0, 0.09);
+        neckBone.rotation.y = THREE.MathUtils.lerp(neckBone.rotation.y, finalTY * 0.4, 0.09);
+        neckBone.rotation.x = THREE.MathUtils.lerp(neckBone.rotation.x, finalTX * 0.4, 0.09);
+        neckBone.rotation.z = THREE.MathUtils.lerp(neckBone.rotation.z, 0, 0.09);
       }
+
+      // ── WAVE STATE MACHINE ──────────────────────────────────────────────
+      const wp = t - waveStartT;
+      if (waveState === 'idle' && t >= waveNextT) { waveState = 'raising'; waveStartT = t; }
+      if (waveState === 'raising'  && wp >= 0.65) { waveState = 'waving';   waveStartT = t; }
+      if (waveState === 'waving'   && (t - waveStartT) >= 2.4) { waveState = 'lowering'; waveStartT = t; }
+      if (waveState === 'lowering' && (t - waveStartT) >= 0.65) {
+        waveState = 'idle'; waveNextT = t + 7 + Math.random() * 4;
+      }
+      let wvArmZ = 0, wvForeX = 0, wvHandZ = 0;
+      const wvP = t - waveStartT;
+      if (waveState === 'raising')  { const p = wvP / 0.65; wvArmZ = -1.3 * p; wvForeX = 0.75 * p; }
+      else if (waveState === 'waving')  { wvArmZ = -1.3; wvForeX = 0.75; wvHandZ = Math.sin(wvP * 6.5) * 0.55; }
+      else if (waveState === 'lowering'){ const p = 1 - (t - waveStartT) / 0.65; wvArmZ = -1.3 * p; wvForeX = 0.75 * p; }
+      if (rightArmBone)     rightArmBone.rotation.z     = THREE.MathUtils.lerp(rightArmBone.rotation.z,     wvArmZ,  0.1);
+      if (rightForeArmBone) rightForeArmBone.rotation.x = THREE.MathUtils.lerp(rightForeArmBone.rotation.x, wvForeX, 0.1);
+      if (rightHandBone)    rightHandBone.rotation.z    = THREE.MathUtils.lerp(rightHandBone.rotation.z,    wvHandZ, 0.15);
 
       camera.position.x = THREE.MathUtils.lerp(camera.position.x,  0.5 + mouseX * 0.15, 0.018);
       camera.position.y = THREE.MathUtils.lerp(camera.position.y, 0.5 + mouseY * -0.08, 0.018);
@@ -1642,9 +1680,9 @@
       sentRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
       const sentScene = new THREE.Scene();
-      const sentCamera = new THREE.PerspectiveCamera(44, 1, 0.1, 50);
-      sentCamera.position.set(0, 1.4, 4.2);
-      sentCamera.lookAt(0, 1.2, 0);
+      const sentCamera = new THREE.PerspectiveCamera(50, 1, 0.1, 50);
+      sentCamera.position.set(0, 0, 5.5);
+      sentCamera.lookAt(0, 0, 0);
 
       function resizeSentinel() {
         const w = sentCanvas.offsetWidth || 380;
@@ -1653,6 +1691,9 @@
         sentCamera.aspect = w / h;
         sentCamera.updateProjectionMatrix();
       }
+
+      // Set correct size immediately (don't wait for model load)
+      setTimeout(resizeSentinel, 0);
 
       const sp = new THREE.PMREMGenerator(sentRenderer);
       sp.compileEquirectangularShader();
@@ -1685,14 +1726,15 @@
 
           const rb = new THREE.Box3().setFromObject(sentModel);
           const rs = rb.getSize(new THREE.Vector3());
-          const sc = THREE.MathUtils.clamp(2.5 / Math.max(rs.y, 0.001), 0.001, 5);
+          const sc = THREE.MathUtils.clamp(2.4 / Math.max(rs.y, 0.001), 0.001, 5);
           sentModel.scale.setScalar(sc);
           sentModel.updateMatrixWorld(true);
 
+          // Centre the model at world origin so camera at (0,0,5.5) sees it perfectly
           const sb3 = new THREE.Box3().setFromObject(sentModel);
           const sbC = sb3.getCenter(new THREE.Vector3());
           sentModel.position.x -= sbC.x;
-          sentModel.position.y += (-1.3 - sb3.min.y);
+          sentModel.position.y -= sbC.y; // centred vertically
           sentModel.position.z -= sbC.z;
           sentModel.rotation.y = SENT_ROT;
           sentRestY = sentModel.position.y;
