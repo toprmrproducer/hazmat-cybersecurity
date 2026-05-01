@@ -1359,6 +1359,7 @@
     let mouseLastMove = 0;
     let idleTargetY = 0, idleTargetX = 0, idleChangeTimer = 0;
     let modelRestY = 0;
+    let trackingStrength = 0; // 0=default pose, 1=full mouse tracking
     const CHAR_X = 0.8;   // centered in viewport
     const CHAR_ROT = -0.65; // ~-37 degrees: shows face, still angled toward text
     const clock = new THREE.Clock();
@@ -1559,9 +1560,9 @@
         console.log('headBone found:', headBone?.name);
         console.log('neckBone found:', neckBone?.name);
 
-        // Reset bones from GLB walking-animation frame-0 so head doesn't start looking up
-        if (headBone) headBone.rotation.set(0.07, 0, 0, 'YXZ'); // slight downward default
-        if (neckBone) neckBone.rotation.set(0.03, 0, 0, 'YXZ');
+        // Reset from GLB frame-0: set chin-down default so character looks toward camera
+        if (headBone) headBone.rotation.set(0.20, 0, 0, 'YXZ'); // chin down, eyes toward viewer
+        if (neckBone) neckBone.rotation.set(0.09, 0, 0, 'YXZ');
 
         scene.environment = envTexture;
         scene.environmentIntensity = 1.8;
@@ -1601,23 +1602,28 @@
       if (headBone && neckBone) {
         headBone.rotation.order = 'YXZ';
         neckBone.rotation.order = 'YXZ';
-        // POSITIVE mouseX multiplier: mouse-right → tY positive → look OUR RIGHT ✓
-        const tY = THREE.MathUtils.clamp(mouseX * 0.32, -0.32, 0.32);
-        // rotation.x NEGATIVE = look up. Add 0.08 default pitch so character naturally looks slightly down.
-        const tX = THREE.MathUtils.clamp(mouseY * -0.28 + 0.08, -0.22, 0.38);
-        // Return to default after 2.5s idle
+
+        // Zone: only track when cursor is over the character (not over text on left or cards on right)
+        const inZone = mouseX > -0.25 && mouseX < 0.52;
         const msSince = performance.now() - mouseLastMove;
-        const returnFade = msSince > 2500 ? Math.min(1, (msSince - 2500) / 1500) : 0;
-        const finalTY = tY * (1 - returnFade);
-        const finalTX = tX * (1 - returnFade) + 0.07 * returnFade; // settle to slight downward
-        const blendedTY = finalTY * 0.80 + idleY * 0.20;
-        const blendedTX = finalTX * 0.80 + idleX * 0.20;
-        headBone.rotation.y = THREE.MathUtils.lerp(headBone.rotation.y, blendedTY, 0.055);
-        headBone.rotation.x = THREE.MathUtils.lerp(headBone.rotation.x, blendedTX, 0.055);
-        headBone.rotation.z = THREE.MathUtils.lerp(headBone.rotation.z, 0, 0.055);
-        neckBone.rotation.y = THREE.MathUtils.lerp(neckBone.rotation.y, finalTY * 0.35, 0.055);
-        neckBone.rotation.x = THREE.MathUtils.lerp(neckBone.rotation.x, finalTX * 0.35, 0.055);
-        neckBone.rotation.z = THREE.MathUtils.lerp(neckBone.rotation.z, 0, 0.055);
+        const recentMove = msSince < 2200;
+        // Smoothly fade tracking in/out as cursor enters/leaves zone
+        trackingStrength = THREE.MathUtils.lerp(trackingStrength, (inZone && recentMove) ? 1.0 : 0.0, 0.04);
+
+        // Default pose: chin down looking toward camera (tX = 0.18)
+        // When tracking: add mouse offset on top of default
+        const tY = mouseX * 0.30 * trackingStrength;
+        const tX = 0.18 + mouseY * -0.25 * trackingStrength; // 0.18 = chin-down default
+
+        const blendedTY = THREE.MathUtils.clamp(tY * 0.82 + idleY * 0.18, -0.30, 0.30);
+        const blendedTX = THREE.MathUtils.clamp(tX * 0.82 + idleX * 0.18, -0.15, 0.40);
+
+        headBone.rotation.y = THREE.MathUtils.lerp(headBone.rotation.y, blendedTY, 0.05);
+        headBone.rotation.x = THREE.MathUtils.lerp(headBone.rotation.x, blendedTX, 0.05);
+        headBone.rotation.z = THREE.MathUtils.lerp(headBone.rotation.z, 0, 0.05);
+        neckBone.rotation.y = THREE.MathUtils.lerp(neckBone.rotation.y, blendedTY * 0.35, 0.05);
+        neckBone.rotation.x = THREE.MathUtils.lerp(neckBone.rotation.x, blendedTX * 0.35, 0.05);
+        neckBone.rotation.z = THREE.MathUtils.lerp(neckBone.rotation.z, 0, 0.05);
       }
 
 
