@@ -1355,14 +1355,10 @@
 
     let model = null;
     let headBone = null, neckBone = null;
-    let rightArmBone = null, rightForeArmBone = null, rightHandBone = null;
     let mouseX = 0, mouseY = 0;
     let mouseLastMove = 0;
     let idleTargetY = 0, idleTargetX = 0, idleChangeTimer = 0;
     let modelRestY = 0;
-    // Wave state machine
-    let waveState = 'idle'; // 'idle' | 'raising' | 'waving' | 'lowering'
-    let waveStartT = 0, waveNextT = 9 + Math.random() * 3;
     const CHAR_X = 0.8;   // centered in viewport
     const CHAR_ROT = -0.65; // ~-37 degrees: shows face, still angled toward text
     const clock = new THREE.Clock();
@@ -1558,25 +1554,14 @@
             if (obj.name === 'neck') neckBone = obj;
             if (!headBone && n.includes('head')) headBone = obj;
             if (!neckBone && n.includes('neck')) neckBone = obj;
-            // Right arm detection — multiple naming conventions
-            if (!rightArmBone && !n.includes('forearm') && !n.includes('shoulder') &&
-                (n === 'rightarm' || n.includes('right_arm') || n.includes('upperarm_r') ||
-                 (n.includes('right') && n.includes('arm')) || n === 'r_upperarm' || n === 'r_arm'))
-              rightArmBone = obj;
-            if (!rightForeArmBone &&
-                (n.includes('rightforearm') || n.includes('right_forearm') || n.includes('forearm_r') ||
-                 n === 'r_forearm' || (n.includes('right') && n.includes('forearm'))))
-              rightForeArmBone = obj;
-            if (!rightHandBone &&
-                (n.includes('righthand') || n.includes('right_hand') || n.includes('hand_r') ||
-                 n === 'r_hand' || (n.includes('right') && n.includes('hand'))))
-              rightHandBone = obj;
           }
         });
-        console.log('[WAVE] arm:', rightArmBone?.name, 'forearm:', rightForeArmBone?.name, 'hand:', rightHandBone?.name);
-
         console.log('headBone found:', headBone?.name);
         console.log('neckBone found:', neckBone?.name);
+
+        // Reset bones from GLB walking-animation frame-0 so head doesn't start looking up
+        if (headBone) headBone.rotation.set(0.07, 0, 0, 'YXZ'); // slight downward default
+        if (neckBone) neckBone.rotation.set(0.03, 0, 0, 'YXZ');
 
         scene.environment = envTexture;
         scene.environmentIntensity = 1.8;
@@ -1606,9 +1591,9 @@
 
       idleChangeTimer -= 0.016;
       if (idleChangeTimer <= 0) {
-        idleTargetY = (Math.random() - 0.5) * 0.3;
-        idleTargetX = (Math.random() - 0.5) * 0.12;
-        idleChangeTimer = 2.5 + Math.random() * 2.0;
+        idleTargetY = (Math.random() - 0.5) * 0.12; // subtle yaw drift
+        idleTargetX = (Math.random() - 0.5) * 0.05; // subtle pitch drift
+        idleChangeTimer = 4.0 + Math.random() * 3.0; // less frequent
       }
       const idleY = THREE.MathUtils.lerp(headBone ? headBone.rotation.y : 0, idleTargetY, 0.008);
       const idleX = THREE.MathUtils.lerp(headBone ? headBone.rotation.x : 0, idleTargetX, 0.008);
@@ -1616,40 +1601,26 @@
       if (headBone && neckBone) {
         headBone.rotation.order = 'YXZ';
         neckBone.rotation.order = 'YXZ';
-        const tY = THREE.MathUtils.clamp(mouseX * -0.6, -0.6, 0.6);
-        // rotation.x NEGATIVE = look UP → cursor-down (mouseY=-1) * -0.65 = +0.65 = look DOWN ✓
-        const tX = THREE.MathUtils.clamp(mouseY * -0.65, -0.65, 0.65);
-        // Default return: after 2.5s idle, smoothly fade head back to forward
+        // POSITIVE mouseX multiplier: mouse-right → tY positive → look OUR RIGHT ✓
+        const tY = THREE.MathUtils.clamp(mouseX * 0.32, -0.32, 0.32);
+        // rotation.x NEGATIVE = look up. Add 0.08 default pitch so character naturally looks slightly down.
+        const tX = THREE.MathUtils.clamp(mouseY * -0.28 + 0.08, -0.22, 0.38);
+        // Return to default after 2.5s idle
         const msSince = performance.now() - mouseLastMove;
         const returnFade = msSince > 2500 ? Math.min(1, (msSince - 2500) / 1500) : 0;
         const finalTY = tY * (1 - returnFade);
-        const finalTX = tX * (1 - returnFade);
-        const blendedTY = finalTY * 0.85 + idleY * 0.15;
-        const blendedTX = finalTX * 0.85 + idleX * 0.15;
-        headBone.rotation.y = THREE.MathUtils.lerp(headBone.rotation.y, blendedTY, 0.09);
-        headBone.rotation.x = THREE.MathUtils.lerp(headBone.rotation.x, blendedTX, 0.09);
-        headBone.rotation.z = THREE.MathUtils.lerp(headBone.rotation.z, 0, 0.09);
-        neckBone.rotation.y = THREE.MathUtils.lerp(neckBone.rotation.y, finalTY * 0.4, 0.09);
-        neckBone.rotation.x = THREE.MathUtils.lerp(neckBone.rotation.x, finalTX * 0.4, 0.09);
-        neckBone.rotation.z = THREE.MathUtils.lerp(neckBone.rotation.z, 0, 0.09);
+        const finalTX = tX * (1 - returnFade) + 0.07 * returnFade; // settle to slight downward
+        const blendedTY = finalTY * 0.80 + idleY * 0.20;
+        const blendedTX = finalTX * 0.80 + idleX * 0.20;
+        headBone.rotation.y = THREE.MathUtils.lerp(headBone.rotation.y, blendedTY, 0.055);
+        headBone.rotation.x = THREE.MathUtils.lerp(headBone.rotation.x, blendedTX, 0.055);
+        headBone.rotation.z = THREE.MathUtils.lerp(headBone.rotation.z, 0, 0.055);
+        neckBone.rotation.y = THREE.MathUtils.lerp(neckBone.rotation.y, finalTY * 0.35, 0.055);
+        neckBone.rotation.x = THREE.MathUtils.lerp(neckBone.rotation.x, finalTX * 0.35, 0.055);
+        neckBone.rotation.z = THREE.MathUtils.lerp(neckBone.rotation.z, 0, 0.055);
       }
 
-      // ── WAVE STATE MACHINE ──────────────────────────────────────────────
-      const wp = t - waveStartT;
-      if (waveState === 'idle' && t >= waveNextT) { waveState = 'raising'; waveStartT = t; }
-      if (waveState === 'raising'  && wp >= 0.65) { waveState = 'waving';   waveStartT = t; }
-      if (waveState === 'waving'   && (t - waveStartT) >= 2.4) { waveState = 'lowering'; waveStartT = t; }
-      if (waveState === 'lowering' && (t - waveStartT) >= 0.65) {
-        waveState = 'idle'; waveNextT = t + 7 + Math.random() * 4;
-      }
-      let wvArmZ = 0, wvForeX = 0, wvHandZ = 0;
-      const wvP = t - waveStartT;
-      if (waveState === 'raising')  { const p = wvP / 0.65; wvArmZ = -1.3 * p; wvForeX = 0.75 * p; }
-      else if (waveState === 'waving')  { wvArmZ = -1.3; wvForeX = 0.75; wvHandZ = Math.sin(wvP * 6.5) * 0.55; }
-      else if (waveState === 'lowering'){ const p = 1 - (t - waveStartT) / 0.65; wvArmZ = -1.3 * p; wvForeX = 0.75 * p; }
-      if (rightArmBone)     rightArmBone.rotation.z     = THREE.MathUtils.lerp(rightArmBone.rotation.z,     wvArmZ,  0.1);
-      if (rightForeArmBone) rightForeArmBone.rotation.x = THREE.MathUtils.lerp(rightForeArmBone.rotation.x, wvForeX, 0.1);
-      if (rightHandBone)    rightHandBone.rotation.z    = THREE.MathUtils.lerp(rightHandBone.rotation.z,    wvHandZ, 0.15);
+
 
       camera.position.x = THREE.MathUtils.lerp(camera.position.x,  0.5 + mouseX * 0.15, 0.018);
       camera.position.y = THREE.MathUtils.lerp(camera.position.y, 0.5 + mouseY * -0.08, 0.018);
